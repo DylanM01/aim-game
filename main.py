@@ -2,7 +2,7 @@
 # 06/17/2024
 
 import pygame, sys, random
-from pygame.locals import QUIT, MOUSEBUTTONDOWN, SRCALPHA
+from pygame.locals import QUIT, SRCALPHA
 
 pygame.init()
 
@@ -15,12 +15,13 @@ class Game:
         self.fps = fps
         self.clock = pygame.time.Clock()
         
-        self.targets_clicked = 0
-        self.target = Target(random.randrange(50, self.window_width - 50), random.randrange(50, self.window_height - 50), 50)
-        
         self.sliders = [
             Slider((640, 480), (100, 20), 0.5, 0, 100)
         ]
+        
+        self.targets_clicked = 0
+        self.target = Target(random.randrange(50, self.window_width - 50), random.randrange(50, self.window_height - 50), self.sliders[0].get_value())
+        
     
     def is_clicked(self, object, mouse_position):
         x, y = mouse_position[0] - object.rect.x, mouse_position[1] - object.rect.y
@@ -28,10 +29,10 @@ class Game:
             return True
     
     def draw_target(self):
+        self.target.radius = self.sliders[0].get_value()
         self.screen.blit(self.target.surface, self.target.rect)
-    
-    def select_new_coordinates(self):
-        self.target = Target(random.randrange(50, self.window_width - 50), random.randrange(50, self.window_height - 50), 50)
+        print(self.target.radius)
+        print(self.target.target_coordinate)
     
     def render(self):
         self.screen.fill((0, 0, 0))
@@ -55,17 +56,17 @@ class Game:
                 
             if self.is_clicked(self.target, mouse_position) and mouse[0]:
                 self.targets_clicked += 1
-                self.select_new_coordinates()
+                self.target = Target(random.randrange(50, self.window_width - 50), random.randrange(50, self.window_height - 50), self.target.radius)
                 
             for slider in self.sliders:
                 if slider.container_rect.collidepoint(mouse_position) and mouse[0]:
                     slider.move_slider(mouse_position)
+                    self.target = Target(self.target.target_coordinate[0], self.target.target_coordinate[1], self.target.radius)
 
 class Target: 
     def __init__(self, coordinateX, coordinateY, radius):
         self.target_coordinate = [coordinateX, coordinateY]
         self.radius = radius
-        
         self.surface = pygame.Surface((self.radius * 2, self.radius * 2), SRCALPHA)
         pygame.draw.circle(self.surface, (255, 255, 255), (self.radius, self.radius), self.radius)
         self.rect = self.surface.get_rect(center=self.target_coordinate)
@@ -92,7 +93,7 @@ class Slider:
     
     def get_value(self):
         value_range = self.slider_right_position - self.slider_left_position - 1
-        button_value = self.button_rect.center - self.slider_left_position
+        button_value = self.button_rect.centerx - self.slider_left_position
         
         return (button_value / value_range) * (self.maximum_value - self.minimum_value) + self.minimum_value
         
